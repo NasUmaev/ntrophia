@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10110f">
-  <title>NASIK TROPHIES</title>
+  <title>NTrophia</title>
   <style>
     :root {
       color-scheme: dark;
@@ -47,6 +47,10 @@
     .button-primary { background: var(--accent); color: var(--accent-ink); }
     .button-quiet { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
     .button-small { padding: 9px 12px; font-size: 13px; }
+    .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .notice { padding: 12px 16px; margin-bottom: 20px; border: 1px solid var(--line); border-radius: 12px; color: var(--gold); background: var(--panel); }
+    [hidden] { display: none !important; }
+    button:disabled { opacity: .5; cursor: default; }
     .stats { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 12px; margin-bottom: 34px; }
     .stat { background: linear-gradient(145deg, #1c2019, #171916); border: 1px solid var(--line); border-radius: var(--radius); padding: 19px 20px; min-height: 115px; }
     .stat-label { color: var(--muted); font-size: 12px; }
@@ -70,6 +74,8 @@
     .trophy-card { position: relative; min-height: 200px; display: flex; flex-direction: column; padding: 19px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; transition: border-color .2s, transform .2s; }
     .trophy-card:hover { border-color: #454b3e; transform: translateY(-2px); }
     .trophy-card::after { content: ""; position: absolute; width: 130px; height: 130px; border-radius: 50%; right: -70px; top: -70px; opacity: .09; background: var(--rarity); filter: blur(1px); }
+    .trophy-card::after { pointer-events: none; }
+    .trophy-card h3, .section-head h2 { overflow-wrap: anywhere; }
     .trophy-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .rarity { color: var(--rarity); display: inline-flex; align-items: center; gap: 7px; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; font-weight: 800; }
     .rarity-icon { font-size: 15px; line-height: 1; }
@@ -105,9 +111,10 @@
 <body>
   <main class="shell">
     <header>
-      <div class="brand"><span class="brand-mark">✦</span><span>NASIK TROPHIES</span></div>
+      <div class="brand"><span class="brand-mark">✦</span><span>NTrophia</span></div>
       <div class="local-badge">Хранится только на этом устройстве</div>
     </header>
+    <div class="notice" id="storageNotice" role="alert" hidden></div>
     <section class="hero">
       <div><p class="eyebrow">Твоя личная игра</p><h1>Каждый шаг<br>засчитан.</h1><p class="hero-copy">Большие мечты складываются из маленьких побед. Собирай их одну за другой.</p></div>
       <button class="button button-primary" id="addTrophyBtn">＋ Новый трофей</button>
@@ -119,12 +126,12 @@
       <div class="stat"><div class="stat-label">Коллекции</div><div class="stat-value" id="collectionCount">0</div><div class="stat-sub">активных целей</div></div>
     </section>
     <section>
-      <div class="section-head"><h2>Коллекции</h2><button class="button button-quiet button-small" id="addCollectionBtn">＋ Коллекция</button></div>
+      <div class="section-head"><h2>Коллекции</h2><div class="actions"><button class="button button-quiet button-small" id="deleteCollectionBtn" hidden>Удалить коллекцию</button><button class="button button-quiet button-small" id="addCollectionBtn">＋ Коллекция</button></div></div>
       <div class="collection-list" id="collectionList"></div>
     </section>
     <section>
       <div class="section-head"><h2 id="trophyHeading">Все трофеи</h2><span class="section-meta" id="visibleCount"></span></div>
-      <div class="toolbar"><div class="filters" id="filters"></div></div>
+      <div class="toolbar"><div class="filters" id="filters"></div><div class="actions"><button class="button button-quiet button-small" id="exportBtn">Экспорт JSON</button><button class="button button-quiet button-small" id="importBtn">Импорт JSON</button><input type="file" id="importFile" accept=".json,application/json" aria-label="Файл резервной копии" hidden></div></div>
       <div class="trophy-grid" id="trophyGrid"></div>
     </section>
     <footer>Твои достижения принадлежат тебе · данные сохраняются в этом браузере</footer>
@@ -132,12 +139,20 @@
 
   <dialog id="trophyDialog">
     <form id="trophyForm" class="dialog-inner">
-      <div class="dialog-head"><h2>Новый трофей</h2><button type="button" class="close-button" data-close="trophyDialog" aria-label="Закрыть">×</button></div>
+      <div class="dialog-head"><h2 id="trophyDialogTitle">Новый трофей</h2><button type="button" class="close-button" data-close="trophyDialog" aria-label="Закрыть">×</button></div>
       <label class="field"><span>Название</span><input name="title" maxlength="90" placeholder="Например, закончить портфолио" required></label>
       <label class="field"><span>Описание <small>(необязательно)</small></span><textarea name="description" maxlength="300" placeholder="Как понять, что цель достигнута?"></textarea></label>
       <label class="field"><span>Редкость</span><select name="rarity"><option value="platinum">Платина</option><option value="gold">Золото</option><option value="silver">Серебро</option><option value="bronze" selected>Бронза</option></select></label>
       <label class="field"><span>Коллекция</span><select name="collection" id="trophyCollection"></select></label>
-      <div class="dialog-actions"><button type="button" class="button button-quiet" data-close="trophyDialog">Отмена</button><button class="button button-primary" type="submit">Добавить</button></div>
+      <div class="dialog-actions"><button type="button" class="button button-quiet" data-close="trophyDialog">Отмена</button><button class="button button-primary" id="saveTrophyBtn" type="submit">Добавить</button></div>
+    </form>
+  </dialog>
+  <dialog id="deleteCollectionDialog">
+    <form id="deleteCollectionForm" class="dialog-inner">
+      <div class="dialog-head"><h2>Удалить коллекцию?</h2><button type="button" class="close-button" data-close="deleteCollectionDialog" aria-label="Закрыть">×</button></div>
+      <p class="hero-copy" id="deleteCollectionSummary"></p>
+      <label class="field" id="moveCollectionField"><span>Перенести трофеи в коллекцию</span><select name="destination" id="moveCollectionSelect"></select></label>
+      <div class="dialog-actions"><button type="button" class="button button-quiet" data-close="deleteCollectionDialog">Отмена</button><button class="button button-primary" type="submit">Удалить коллекцию</button></div>
     </form>
   </dialog>
   <dialog id="collectionDialog">
@@ -150,6 +165,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script>
     (() => {
+      // Keep the MVP key and data fields so existing browser saves remain readable.
       const KEY = 'nasik-trophies-v1';
       const rarityInfo = {
         platinum: { label: 'Платина', icon: '✦', color: 'var(--platinum)' },
@@ -158,22 +174,69 @@
         bronze: { label: 'Бронза', icon: '●', color: 'var(--bronze)' }
       };
       const filters = [{ id: 'all', label: 'Все' }, ...Object.entries(rarityInfo).map(([id, info]) => ({ id, label: info.label }))];
-      const uid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+      const uid = () => (globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
       const defaultState = () => ({
         collections: [{ id: 'general', name: 'Моя коллекция', createdAt: new Date().toISOString() }],
         trophies: [], selectedCollection: 'all', filter: 'all'
       });
-      let state;
-      try {
-        const saved = JSON.parse(localStorage.getItem(KEY));
-        state = saved && Array.isArray(saved.collections) && Array.isArray(saved.trophies) ? { ...defaultState(), ...saved } : defaultState();
-      } catch { state = defaultState(); }
       const $ = (id) => document.getElementById(id);
-      const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { showToast('Не удалось сохранить данные в браузере'); } };
-      const safeDate = (date) => { if (!date) return ''; const d = new Date(date); return Number.isNaN(d.getTime()) ? '' : new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }).format(d); };
-      const escapeText = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+      function validateState(data) {
+        const invalid = message => { throw new Error(message); };
+        const string = (value, max, label, empty = false) => {
+          if (typeof value !== 'string' || value.length > max || (!empty && !value.trim())) invalid(`Некорректное поле: ${label}.`);
+          return value;
+        };
+        const date = (value, label) => {
+          if (typeof value !== 'string' || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString() !== value) invalid(`Некорректная дата: ${label}.`);
+          return value;
+        };
+        if (!isObject(data) || !Array.isArray(data.collections) || !Array.isArray(data.trophies)) invalid('Ожидаются массивы коллекций и трофеев.');
+        const collectionIds = new Set();
+        const collections = data.collections.map(c => {
+          if (!isObject(c)) invalid('Некорректная коллекция.');
+          const id = string(c.id, 200, 'идентификатор коллекции');
+          if (id === 'all' || collectionIds.has(id)) invalid('Повторяющийся или зарезервированный идентификатор коллекции.');
+          collectionIds.add(id);
+          return { id, name: string(c.name, 50, 'название коллекции'), createdAt: date(c.createdAt, 'создание коллекции') };
+        });
+        const trophyIds = new Set();
+        const trophies = data.trophies.map(t => {
+          if (!isObject(t)) invalid('Некорректный трофей.');
+          const id = string(t.id, 200, 'идентификатор трофея');
+          if (trophyIds.has(id)) invalid('Повторяющийся идентификатор трофея.');
+          trophyIds.add(id);
+          if (typeof t.rarity !== 'string' || !Object.hasOwn(rarityInfo, t.rarity)) invalid('Неизвестная редкость трофея.');
+          if (typeof t.collectionId !== 'string' || !collectionIds.has(t.collectionId)) invalid('Трофей ссылается на несуществующую коллекцию.');
+          return { id, title: string(t.title, 90, 'название трофея'), description: string(t.description, 300, 'описание', true), rarity: t.rarity, collectionId: t.collectionId,
+            earnedAt: t.earnedAt === null ? null : date(t.earnedAt, 'получение трофея'), createdAt: date(t.createdAt, 'создание трофея') };
+        });
+        return { collections, trophies, selectedCollection: collectionIds.has(data.selectedCollection) ? data.selectedCollection : 'all', filter: filters.some(f => f.id === data.filter) ? data.filter : 'all' };
+      }
+      let state = defaultState();
+      let loadError = false;
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw !== null) state = validateState(JSON.parse(raw));
+      } catch {
+        loadError = true;
+        $('storageNotice').textContent = 'Сохранение недоступно или повреждено. Исходные данные не изменены. Восстановите корректную резервную копию через импорт.';
+        $('storageNotice').hidden = false;
+      }
       let toastTimer;
-      function showToast(message) { const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200); }
+      function showToast(message) { const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3500); }
+      function showError(message) { $('storageNotice').textContent = message; $('storageNotice').hidden = false; }
+      // Save first; never replace the visible state or announce success after a failed write.
+      function commit(next, message, restoring = false) {
+        if (loadError && !restoring) { showToast('Сначала восстановите сохранение через импорт'); return false; }
+        try { localStorage.setItem(KEY, JSON.stringify(next)); }
+        catch { showError('Не удалось сохранить изменения. Данные не изменены. Проверьте доступность хранилища браузера.'); return false; }
+        state = next; loadError = false; $('storageNotice').hidden = true; render();
+        if (message) showToast(message);
+        return true;
+      }
+      const safeDate = value => new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value));
+      const escapeText = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       function render() {
         const earned = state.trophies.filter(t => t.earnedAt).length;
         const total = state.trophies.length;
@@ -186,6 +249,7 @@
         $('collectionCount').textContent = state.collections.length;
         const current = state.collections.find(c => c.id === state.selectedCollection);
         $('trophyHeading').textContent = current ? current.name : 'Все трофеи';
+        $('deleteCollectionBtn').hidden = !current;
         $('collectionList').innerHTML = `<button class="collection-chip ${state.selectedCollection === 'all' ? 'active' : ''}" data-collection="all"><span class="collection-name">Все коллекции</span><span class="collection-count">${total}</span></button>` + state.collections.map(c => {
           const count = state.trophies.filter(t => t.collectionId === c.id).length;
           return `<button class="collection-chip ${state.selectedCollection === c.id ? 'active' : ''}" data-collection="${escapeText(c.id)}"><span class="collection-name">${escapeText(c.name)}</span><span class="collection-count">${count}</span></button>`;
@@ -194,37 +258,116 @@
         const list = state.trophies.filter(t => (state.selectedCollection === 'all' || t.collectionId === state.selectedCollection) && (state.filter === 'all' || t.rarity === state.filter));
         $('visibleCount').textContent = `${list.length} ${plural(list.length, 'трофей', 'трофея', 'трофеев')}`;
         $('trophyGrid').innerHTML = list.length ? list.map(trophyCard).join('') : `<div class="empty"><strong>${total ? 'Здесь пока пусто' : 'Начни собирать победы'}</strong>${total ? 'Добавь трофей или выбери другой фильтр.' : 'Создай первый трофей — даже маленький шаг заслуживает отметки.'}</div>`;
-        const collectionSelect = $('trophyCollection');
-        collectionSelect.innerHTML = state.collections.map(c => `<option value="${escapeText(c.id)}">${escapeText(c.name)}</option>`).join('');
-        if (state.collections.some(c => c.id === state.selectedCollection)) collectionSelect.value = state.selectedCollection;
+      }
+      function fillCollections(select, collections) {
+        select.innerHTML = collections.map(c => `<option value="${escapeText(c.id)}">${escapeText(c.name)}</option>`).join('');
       }
       function plural(n, one, few, many) { const n10 = n % 10, n100 = n % 100; return n10 === 1 && n100 !== 11 ? one : n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14) ? few : many; }
       function trophyCard(t) {
-        const info = rarityInfo[t.rarity] || rarityInfo.bronze;
+        const info = rarityInfo[t.rarity];
         const col = state.collections.find(c => c.id === t.collectionId);
-        return `<article class="trophy-card" style="--rarity:${info.color}"><div class="trophy-top"><span class="rarity"><span class="rarity-icon">${info.icon}</span>${info.label}</span><button class="icon-button delete-trophy" data-id="${escapeText(t.id)}" aria-label="Удалить трофей" title="Удалить">⋯</button></div><h3>${escapeText(t.title)}</h3>${t.description ? `<p class="trophy-description">${escapeText(t.description)}</p>` : ''}<div class="trophy-bottom"><span class="date-earned">${t.earnedAt ? `Получен ${safeDate(t.earnedAt)}` : escapeText(col?.name || '')}</span><button class="earned-button ${t.earnedAt ? 'done' : ''}" data-earn="${escapeText(t.id)}">${t.earnedAt ? '✓ Получен' : 'Отметить'}</button></div></article>`;
+        return `<article class="trophy-card" style="--rarity:${info.color}"><div class="trophy-top"><span class="rarity"><span class="rarity-icon">${info.icon}</span>${info.label}</span><div class="actions"><button class="icon-button" data-edit="${escapeText(t.id)}" aria-label="Редактировать трофей ${escapeText(t.title)}" title="Редактировать">✎</button><button class="icon-button" data-delete="${escapeText(t.id)}" aria-label="Удалить трофей ${escapeText(t.title)}" title="Удалить">×</button></div></div><h3>${escapeText(t.title)}</h3>${t.description ? `<p class="trophy-description">${escapeText(t.description)}</p>` : ''}<div class="trophy-bottom"><span class="date-earned">${t.earnedAt ? `Получен ${safeDate(t.earnedAt)}` : escapeText(col?.name || '')}</span><button class="earned-button ${t.earnedAt ? 'done' : ''}" data-earn="${escapeText(t.id)}">${t.earnedAt ? '✓ Получен' : 'Отметить'}</button></div></article>`;
       }
-      $('collectionList').addEventListener('click', e => { const btn = e.target.closest('[data-collection]'); if (!btn) return; state.selectedCollection = btn.dataset.collection; persist(); render(); });
-      $('filters').addEventListener('click', e => { const btn = e.target.closest('[data-filter]'); if (!btn) return; state.filter = btn.dataset.filter; persist(); render(); });
+      let editingId = null;
+      function openTrophy(trophy = null) {
+        if (!state.collections.length) { showToast('Сначала создайте коллекцию'); $('addCollectionBtn').click(); return; }
+        editingId = trophy?.id ?? null;
+        const form = $('trophyForm'); form.reset();
+        fillCollections($('trophyCollection'), state.collections);
+        form.elements.collection.value = trophy?.collectionId ?? (state.selectedCollection === 'all' ? state.collections[0].id : state.selectedCollection);
+        if (trophy) { form.elements.title.value = trophy.title; form.elements.description.value = trophy.description; form.elements.rarity.value = trophy.rarity; }
+        $('trophyDialogTitle').textContent = trophy ? 'Редактировать трофей' : 'Новый трофей';
+        $('saveTrophyBtn').textContent = trophy ? 'Сохранить' : 'Добавить';
+        $('trophyDialog').showModal(); form.elements.title.focus();
+      }
+      $('collectionList').addEventListener('click', e => { const btn = e.target.closest('[data-collection]'); if (btn) commit({ ...state, selectedCollection: btn.dataset.collection }); });
+      $('filters').addEventListener('click', e => { const btn = e.target.closest('[data-filter]'); if (btn) commit({ ...state, filter: btn.dataset.filter }); });
       $('trophyGrid').addEventListener('click', e => {
+        const edit = e.target.closest('[data-edit]');
+        if (edit) { const t = state.trophies.find(t => t.id === edit.dataset.edit); if (t) openTrophy(t); return; }
         const earn = e.target.closest('[data-earn]');
-        if (earn) { const t = state.trophies.find(x => x.id === earn.dataset.earn); if (!t) return; t.earnedAt = t.earnedAt ? null : new Date().toISOString(); persist(); render(); showToast(t.earnedAt ? 'Трофей получен! Отличная работа.' : 'Отметка о получении снята'); return; }
-        const del = e.target.closest('.delete-trophy');
-        if (del && confirm('Удалить этот трофей?')) { state.trophies = state.trophies.filter(t => t.id !== del.dataset.id); persist(); render(); showToast('Трофей удалён'); }
+        if (earn) {
+          const t = state.trophies.find(x => x.id === earn.dataset.earn); if (!t) return;
+          const earnedAt = t.earnedAt ? null : new Date().toISOString();
+          commit({ ...state, trophies: state.trophies.map(x => x.id === t.id ? { ...x, earnedAt } : x) }, earnedAt ? 'Трофей получен! Отличная работа.' : 'Отметка о получении снята'); return;
+        }
+        const del = e.target.closest('[data-delete]');
+        if (del && confirm('Удалить этот трофей?')) commit({ ...state, trophies: state.trophies.filter(t => t.id !== del.dataset.delete) }, 'Трофей удалён');
       });
-      $('addTrophyBtn').addEventListener('click', () => { $('trophyForm').reset(); render(); $('trophyDialog').showModal(); $('trophyForm').elements.title.focus(); });
+      $('addTrophyBtn').addEventListener('click', () => openTrophy());
       $('addCollectionBtn').addEventListener('click', () => { $('collectionForm').reset(); $('collectionDialog').showModal(); $('collectionForm').elements.title.focus(); });
       $('trophyForm').addEventListener('submit', e => {
-        e.preventDefault(); const data = new FormData(e.currentTarget); const title = String(data.get('title')).trim(); if (!title) return;
-        state.trophies.unshift({ id: uid(), title, description: String(data.get('description') || '').trim(), rarity: data.get('rarity'), collectionId: data.get('collection'), earnedAt: null, createdAt: new Date().toISOString() });
-        persist(); $('trophyDialog').close(); render(); showToast('Трофей добавлен');
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        const title = String(data.get('title') || '').trim();
+        const description = String(data.get('description') || '').trim();
+        const rarity = data.get('rarity'), collectionId = data.get('collection');
+        if (!title || title.length > 90 || description.length > 300 || !Object.hasOwn(rarityInfo, rarity) || !state.collections.some(c => c.id === collectionId)) { showToast('Проверьте поля трофея и коллекцию'); return; }
+        const fields = { title, description, rarity, collectionId };
+        if (editingId && !state.trophies.some(t => t.id === editingId)) { showToast('Трофей больше не существует'); return; }
+        const trophies = editingId ? state.trophies.map(t => t.id === editingId ? { ...t, ...fields } : t) : [{ id: uid(), ...fields, earnedAt: null, createdAt: new Date().toISOString() }, ...state.trophies];
+        if (commit({ ...state, trophies }, editingId ? 'Трофей обновлён' : 'Трофей добавлен')) $('trophyDialog').close();
       });
       $('collectionForm').addEventListener('submit', e => {
-        e.preventDefault(); const name = String(new FormData(e.currentTarget).get('title')).trim(); if (!name) return;
-        const collection = { id: uid(), name, createdAt: new Date().toISOString() }; state.collections.push(collection); state.selectedCollection = collection.id; persist(); $('collectionDialog').close(); render(); showToast('Коллекция создана');
+        e.preventDefault(); const name = String(new FormData(e.currentTarget).get('title') || '').trim(); if (!name || name.length > 50) return;
+        const collection = { id: uid(), name, createdAt: new Date().toISOString() };
+        if (commit({ ...state, collections: [...state.collections, collection], selectedCollection: collection.id }, 'Коллекция создана')) $('collectionDialog').close();
+      });
+      let deletingCollectionId = null;
+      $('deleteCollectionBtn').addEventListener('click', () => {
+        const current = state.collections.find(c => c.id === state.selectedCollection); if (!current) return;
+        const count = state.trophies.filter(t => t.collectionId === current.id).length;
+        const remaining = state.collections.filter(c => c.id !== current.id);
+        if (count && !remaining.length) { showToast('Сначала создайте другую коллекцию для переноса трофеев'); return; }
+        deletingCollectionId = current.id;
+        $('deleteCollectionSummary').textContent = count ? `«${current.name}» будет удалена. Все трофеи (${count}) сохранятся в выбранной коллекции вместе с датами получения.` : `Пустая коллекция «${current.name}» будет удалена.`;
+        $('moveCollectionField').hidden = !count;
+        fillCollections($('moveCollectionSelect'), remaining);
+        $('deleteCollectionDialog').showModal();
+      });
+      $('deleteCollectionForm').addEventListener('submit', e => {
+        e.preventDefault();
+        if (!state.collections.some(c => c.id === deletingCollectionId)) return;
+        const collections = state.collections.filter(c => c.id !== deletingCollectionId);
+        const hasTrophies = state.trophies.some(t => t.collectionId === deletingCollectionId);
+        const destination = $('moveCollectionSelect').value;
+        if (hasTrophies && !collections.some(c => c.id === destination)) { showToast('Выберите коллекцию для переноса'); return; }
+        const trophies = state.trophies.map(t => t.collectionId === deletingCollectionId ? { ...t, collectionId: destination } : t);
+        if (commit({ ...state, collections, trophies, selectedCollection: hasTrophies ? destination : 'all' }, 'Коллекция удалена; трофеи сохранены')) $('deleteCollectionDialog').close();
+      });
+      $('exportBtn').addEventListener('click', () => {
+        if (loadError) { showToast('Сохранение недоступно. Экспорт пустых данных отменён.'); return; }
+        try {
+          const backup = { app: 'NTrophia', version: 1, exportedAt: new Date().toISOString(), data: state };
+          const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
+          const link = document.createElement('a'); link.href = url; link.download = `NTrophia-${new Date().toISOString().slice(0, 10)}.json`;
+          document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+          showToast('Резервная копия подготовлена');
+        } catch { showError('Не удалось подготовить файл резервной копии. Данные не изменены.'); }
+      });
+      $('importBtn').addEventListener('click', () => $('importFile').click());
+      $('importFile').addEventListener('change', async e => {
+        const file = e.target.files[0]; if (!file) return;
+        $('importBtn').disabled = true;
+        try {
+          const parsed = JSON.parse(await file.text());
+          let data = parsed;
+          if (isObject(parsed) && ('app' in parsed || 'version' in parsed || 'data' in parsed)) {
+            if (parsed.app !== 'NTrophia' || parsed.version !== 1) throw new Error('Неизвестный формат или версия резервной копии.');
+            data = parsed.data;
+          }
+          const restored = validateState(data);
+          if (!confirm(`Заменить текущие данные резервной копией?\nКоллекций: ${restored.collections.length}, трофеев: ${restored.trophies.length}.\nТекущие коллекции и трофеи будут заменены. Отменить замену можно только импортом их резервной копии.`)) return;
+          if (commit(restored, 'Резервная копия восстановлена', true)) for (const dialog of document.querySelectorAll('dialog')) if (dialog.open) dialog.close();
+        } catch (error) {
+          const detail = error instanceof SyntaxError ? 'Файл содержит некорректный JSON.' : (error.message || 'Не удалось прочитать файл.');
+          showError(`Импорт отменён. ${detail} Текущие данные не изменены.`);
+        } finally { e.target.value = ''; $('importBtn').disabled = false; }
       });
       document.addEventListener('click', e => { const close = e.target.closest('[data-close]'); if (close) $(close.dataset.close).close(); });
-      for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+      for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('click', e => {
+        if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); }
+      });
       render();
     })();
   </script>
