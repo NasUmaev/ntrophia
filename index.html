@@ -116,6 +116,28 @@
     .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 21px; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; background: #e9f6c9; color: #202511; font-weight: 700; font-size: 13px; border-radius: 12px; padding: 11px 15px; transition: .2s; box-shadow: 0 8px 25px #0006; }
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    .award-feedback { position: fixed; z-index: 20; right: 24px; bottom: 24px; width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+    .award-card { position: relative; overflow: hidden; display: flex; align-items: center; gap: 15px; padding: 18px 20px; background: var(--panel); border: 1px solid var(--rarity); border-radius: var(--radius); box-shadow: 0 12px 36px #0008; animation: award-appear .3s ease-out; }
+    .award-card > div { min-width: 0; }
+    .award-icon { color: var(--rarity); font-size: 31px; line-height: 1; flex: 0 0 auto; }
+    .award-label { color: var(--rarity); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .award-title { font-size: 16px; font-weight: 700; margin: 4px 0 0; overflow-wrap: anywhere; }
+    .platinum-celebration { padding: 25px 22px; border-color: var(--accent); box-shadow: 0 0 40px #d1fb6233, 0 16px 45px #0009; animation: platinum-arrive .8s ease-out, platinum-glow 2s ease-in-out .8s 2; }
+    .platinum-celebration::before { content: ""; position: absolute; inset: -70%; background: radial-gradient(ellipse, #d1fb6222, transparent 60%); pointer-events: none; animation: platinum-light 3s ease-out; }
+    .platinum-celebration .award-icon { color: var(--accent); font-size: 46px; text-shadow: 0 0 22px #d1fb6266; }
+    .platinum-celebration .award-label { color: var(--accent); }
+    .history-list { display: grid; gap: 12px; }
+    .history-row { display: flex; gap: 16px; align-items: center; padding: 19px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .history-row > div { min-width: 0; flex: 1; }
+    .history-row h2 { font-size: 17px; margin: 5px 0; overflow-wrap: anywhere; }
+    .history-row p { color: var(--muted); font-size: 12px; margin: 0; overflow-wrap: anywhere; }
+    .history-row time { color: var(--muted); font-size: 12px; flex: 0 0 auto; }
+    @keyframes award-appear { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes platinum-arrive { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes platinum-glow { 50% { box-shadow: 0 0 55px #d1fb6255, 0 16px 45px #0009; } }
+    @keyframes platinum-light { from { opacity: 0; transform: scale(.6); } 35% { opacity: 1; } to { opacity: .2; transform: scale(1); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+    @media (max-width: 560px) { .award-feedback { right: 16px; bottom: 16px; } .history-row { align-items: flex-start; flex-wrap: wrap; } .history-row time { margin-left: 47px; } }
     footer { text-align: center; margin-top: 50px; color: #656a61; font-size: 11px; }
     @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } .trophy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 560px) { .shell { padding: 21px 16px 45px; } header { margin-bottom: 33px; } .hero { align-items: flex-start; flex-direction: column; } .hero .button { width: 100%; } .stats { gap: 8px; } .stat { padding: 15px; min-height: 102px; } .stat-value { font-size: 25px; } .toolbar { align-items: flex-start; flex-direction: column; } .trophy-grid { grid-template-columns: 1fr; } .trophy-card { min-height: 180px; } }
@@ -128,7 +150,8 @@
       <div class="local-badge">Хранится только на этом устройстве</div>
     </header>
     <div class="notice" id="storageNotice" role="alert" hidden></div>
-    <div class="toolbar"><span class="section-meta">Твои коллекции достижений</span><div class="actions"><button class="button button-quiet button-small" id="exportBtn">Экспорт JSON</button><button class="button button-quiet button-small" id="importBtn">Импорт JSON</button><input type="file" id="importFile" accept=".json,application/json" aria-label="Файл резервной копии" hidden></div></div>
+    <div class="toolbar"><span class="section-meta">Твои коллекции достижений</span><div class="actions"><button class="button button-quiet button-small" id="historyBtn" aria-pressed="false">История</button><button class="button button-quiet button-small" id="soundToggle" type="button" role="switch" aria-checked="false" aria-label="Звуки достижений">Звук: выкл</button><button class="button button-quiet button-small" id="exportBtn">Экспорт JSON</button><button class="button button-quiet button-small" id="importBtn">Импорт JSON</button><input type="file" id="importFile" accept=".json,application/json" aria-label="Файл резервной копии" hidden></div></div>
+    <p class="section-meta" id="soundHint" role="status" hidden></p>
     <div id="homeScreen">
       <section class="hero">
         <div><p class="eyebrow">Твоя личная игра</p><h1>Каждый шаг<br>засчитан.</h1><p class="hero-copy">Большие мечты складываются из маленьких побед. Собирай их одну за другой.</p></div>
@@ -162,6 +185,11 @@
         <p class="section-meta" id="orderHint">Порядок меняется кнопками ↑ и ↓.</p>
         <div class="trophy-grid" id="trophyGrid"></div>
       </section>
+    </div>
+    <div id="historyScreen" hidden>
+      <button class="button button-quiet button-small back-button" id="historyBackBtn">← Назад</button>
+      <section class="hero"><div><p class="eyebrow">Твои победы</p><h1>История</h1><p class="hero-copy">Полученные достижения — от новых к старым.</p></div></section>
+      <div class="history-list" id="historyList"></div>
     </div>
     <footer>Твои достижения принадлежат тебе · данные сохраняются в этом браузере</footer>
   </main>
@@ -198,11 +226,13 @@
     </form>
   </dialog>
   <dialog id="secretDialog"><div class="dialog-inner"><div class="dialog-head"><h2>Условия скрытого трофея</h2><button type="button" class="close-button" data-close="secretDialog" aria-label="Закрыть">×</button></div><h3 id="secretTitle"></h3><p class="trophy-description" id="secretDescription"></p><div class="dialog-actions"><button class="button button-quiet" data-close="secretDialog">Закрыть</button></div></div></dialog>
+  <div class="award-feedback" id="awardFeedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script>
     (() => {
       const KEY = 'nasik-trophies-v1';
       const BACKUP_KEY = 'nasik-trophies-v1-before-iteration-2';
+      const PREFERENCES_KEY = 'ntrophia-preferences-v1';
       const rarityInfo = {
         platinum: { label: 'Платина', icon: '✦', color: 'var(--platinum)' },
         gold: { label: 'Золото', icon: '◆', color: 'var(--gold)' },
@@ -293,6 +323,7 @@
         return { ...data, trophies: data.trophies.map(t => ({ ...t, order: positions.get(t.id) })) };
       }
       let state = defaultState(), loadError = false, legacyRaw = null;
+      let historyOpen = false;
       function showError(message) {
         $('storageNotice').textContent = message; $('storageNotice').hidden = false;
         for (const id of ['trophyDialog', 'collectionDialog', 'deleteCollectionDialog']) if ($(id).open) { $(`${id}Error`).textContent = message; $(`${id}Error`).hidden = false; }
@@ -317,17 +348,116 @@
         loadError = true;
         showError('Сохранение недоступно или повреждено. Исходные данные не изменены. Восстановите корректную резервную копию через импорт.');
       }
+      let soundEnabled = false;
+      try { const saved = JSON.parse(localStorage.getItem(PREFERENCES_KEY)); soundEnabled = isObject(saved) && saved.soundEnabled === true; } catch { /* A missing or unreadable preference keeps sound off. */ }
+      let audioContext = null, soundGeneration = 0, soundAward = null;
+      const activeOscillators = new Set();
+      function renderSoundSetting() {
+        $('soundToggle').textContent = soundEnabled ? 'Звук: вкл' : 'Звук: выкл';
+        $('soundToggle').setAttribute('aria-checked', String(soundEnabled));
+      }
+      function soundHint(message) { $('soundHint').textContent = message; $('soundHint').hidden = !message; }
+      function stopAwardSound() {
+        soundGeneration++; soundAward = null;
+        for (const oscillator of activeOscillators) { try { oscillator.stop(); } catch { /* Already ended. */ } }
+        activeOscillators.clear();
+      }
+      function playAwardSound(award, interaction) {
+        if (!soundEnabled || !interaction?.isTrusted || (globalThis.navigator?.userActivation && !navigator.userActivation.isActive)) return;
+        const AudioContextClass = globalThis.AudioContext || globalThis.webkitAudioContext;
+        if (!AudioContextClass) { soundHint('Этот браузер не поддерживает звуки достижений.'); return; }
+        stopAwardSound(); soundAward = award;
+        const generation = soundGeneration;
+        try {
+          if (!audioContext || audioContext.state === 'closed') audioContext = new AudioContextClass();
+          const context = audioContext;
+          // Resume is requested synchronously inside the authorized user gesture.
+          const resumed = context.state === 'running' ? Promise.resolve() : context.resume();
+          Promise.resolve(resumed).then(() => {
+            if (generation !== soundGeneration || !soundEnabled || !awardIsCurrent(award)) return;
+            if (context.state !== 'running') { soundHint('Браузер не разрешил звук. Достижение сохранено.'); return; }
+            const notes = { bronze: [392, 523], silver: [523, 659], gold: [659, 784], platinum: [523, 659, 784, 1046] }[award.rarity];
+            const spacing = award.rarity === 'platinum' ? .16 : .11;
+            notes.forEach((frequency, index) => {
+              const oscillator = context.createOscillator(), gain = context.createGain();
+              const start = context.currentTime + .01 + index * spacing;
+              oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(frequency, start);
+              gain.gain.setValueAtTime(.0001, start); gain.gain.exponentialRampToValueAtTime(.035, start + .012); gain.gain.exponentialRampToValueAtTime(.0001, start + .19);
+              oscillator.connect(gain); gain.connect(context.destination); activeOscillators.add(oscillator);
+              oscillator.onended = () => { activeOscillators.delete(oscillator); oscillator.disconnect(); gain.disconnect(); };
+              oscillator.start(start); oscillator.stop(start + .2);
+            });
+            soundHint('');
+          }).catch(() => { if (generation === soundGeneration && soundEnabled) soundHint('Не удалось воспроизвести звук. Достижение сохранено.'); });
+        } catch { soundHint('Не удалось воспроизвести звук. Достижение сохранено.'); }
+      }
+      let feedbackQueue = [], activeAward = null, feedbackTimer = null;
+      function awardIsCurrent(award) { return state.trophies.some(t => t.id === award.id && t.rarity === award.rarity && t.earnedAt === award.earnedAt); }
+      function hideAward() { $('awardFeedback').hidden = true; $('awardFeedback').innerHTML = ''; }
+      function clearAwardFeedback() { clearTimeout(feedbackTimer); feedbackTimer = null; feedbackQueue = []; activeAward = null; hideAward(); }
+      function presentNextAward() {
+        if (activeAward) return;
+        while (feedbackQueue.length) {
+          const award = feedbackQueue.shift(); if (!awardIsCurrent(award)) continue;
+          activeAward = award;
+          clearTimeout(toastTimer); $('toast').classList.remove('show');
+          const info = rarityInfo[award.rarity], platinum = award.rarity === 'platinum';
+          $('awardFeedback').innerHTML = `<div class="award-card ${platinum ? 'platinum-celebration' : ''}" style="--rarity:${info.color}"><span class="award-icon" aria-hidden="true">${info.icon}</span><div><div class="award-label">${platinum ? 'Платина · Коллекция завершена' : `${info.label} · Трофей получен`}</div><p class="award-title">${escapeText(award.title)}</p></div></div>`;
+          $('awardFeedback').hidden = false;
+          feedbackTimer = setTimeout(() => { activeAward = null; feedbackTimer = null; hideAward(); presentNextAward(); }, platinum ? 5000 : 3500);
+          return;
+        }
+      }
+      function pruneAwardFeedback() {
+        if (soundAward && !awardIsCurrent(soundAward)) stopAwardSound();
+        feedbackQueue = feedbackQueue.filter(awardIsCurrent);
+        if (activeAward && !awardIsCurrent(activeAward)) { clearTimeout(feedbackTimer); feedbackTimer = null; activeAward = null; hideAward(); stopAwardSound(); }
+        presentNextAward();
+      }
+      function celebrateAcquisitions(before, after, interaction) {
+        const previous = new Map(before.trophies.map(t => [t.id, t]));
+        const acquired = after.trophies.filter(t => t.earnedAt && !previous.get(t.id)?.earnedAt);
+        // Ordinary trophies first, then the separately styled platinum award.
+        acquired.sort((a, b) => Number(a.rarity === 'platinum') - Number(b.rarity === 'platinum'));
+        feedbackQueue.push(...acquired.map(t => ({ id: t.id, rarity: t.rarity, earnedAt: t.earnedAt, title: t.title })));
+        presentNextAward();
+        if (acquired.length) playAwardSound(acquired.find(t => t.rarity === 'platinum') || acquired[0], interaction);
+      }
+      function renderHistory() {
+        const list = state.trophies.filter(t => t.earnedAt).sort((a, b) => Date.parse(b.earnedAt) - Date.parse(a.earnedAt) || a.id.localeCompare(b.id));
+        const dateFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        $('historyList').innerHTML = list.length ? list.map(t => {
+          const info = rarityInfo[t.rarity], collection = state.collections.find(c => c.id === t.collectionId);
+          return `<article class="history-row"><span class="award-icon" style="--rarity:${info.color}" aria-hidden="true">${info.icon}</span><div><span class="rarity" style="--rarity:${info.color}">${info.label}</span><h2>${escapeText(t.title)}</h2><p>${escapeText(collection?.name || '')}</p></div><time datetime="${escapeText(t.earnedAt)}">${dateFormat.format(new Date(t.earnedAt))}</time></article>`;
+        }).join('') : '<div class="empty"><strong>Победы ещё впереди</strong>Здесь появятся твои полученные достижения.</div>';
+      }
+      $('soundToggle').addEventListener('click', () => {
+        const enabled = !soundEnabled;
+        try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ soundEnabled: enabled })); }
+        catch { soundHint('Не удалось сохранить настройку звука. Она не изменена.'); return; }
+        soundEnabled = enabled;
+        if (!enabled) stopAwardSound();
+        renderSoundSetting(); soundHint('');
+      });
+      $('historyBtn').addEventListener('click', () => { historyOpen = true; render(); });
+      $('historyBackBtn').addEventListener('click', () => { historyOpen = false; render(); });
+      renderSoundSetting();
       let toastTimer;
       function showToast(message) { const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3500); }
-      function commit(next, message, restoring = false) {
+      function commit(next, message, restoring = false, interaction = null) {
         if (loadError && !restoring) { showError('Сначала восстановите сохранение через импорт. Исходные данные не изменены.'); return false; }
         let prepared;
         try {
           prepared = reconcilePlatinum(validateState(normalizeOrder(next)));
           preserveLegacySave(); localStorage.setItem(KEY, JSON.stringify(prepared));
         } catch (error) { showError(`Не удалось сохранить изменения. ${error.message || 'Хранилище недоступно.'} Данные не изменены.`); return false; }
-        state = prepared; legacyRaw = null; loadError = false; $('storageNotice').hidden = true; render();
-        if (message) showToast(message);
+        const before = state;
+        state = prepared; legacyRaw = null; loadError = false; $('storageNotice').hidden = true;
+        if (restoring) { historyOpen = false; clearAwardFeedback(); stopAwardSound(); }
+        render(); pruneAwardFeedback();
+        // Feedback cannot change whether the already-persisted mutation succeeded.
+        if (!restoring && interaction) { try { celebrateAcquisitions(before, prepared, interaction); } catch { /* Feedback is optional. */ } }
+        if (message && !activeAward) showToast(message);
         return true;
       }
       function stats(trophies) {
@@ -340,7 +470,9 @@
         $('totalProgressText').textContent = `${global.earned} из ${global.total} трофеев получено`;
         $('earnedCount').textContent = global.earned; $('allCount').textContent = global.total; $('collectionCount').textContent = state.collections.length;
         const current = state.collections.find(c => c.id === state.selectedCollection);
-        $('homeScreen').hidden = !!current; $('collectionScreen').hidden = !current;
+        $('homeScreen').hidden = historyOpen || !!current; $('collectionScreen').hidden = historyOpen || !current;
+        $('historyScreen').hidden = !historyOpen; $('historyBtn').setAttribute('aria-pressed', String(historyOpen));
+        if (historyOpen) renderHistory();
         $('collectionList').innerHTML = state.collections.length ? state.collections.map(c => {
           const list = ordered(state, c.id), s = stats(list), platinum = list.find(t => t.rarity === 'platinum');
           return `<button class="collection-card" data-collection="${escapeText(c.id)}"><span class="eyebrow">${platinum?.earnedAt ? '✦ Платина получена' : 'Коллекция достижений'}</span><h3>${escapeText(c.name)}</h3><p>${escapeText(c.description || 'Твой следующий набор побед')}</p><span class="section-meta"><span>${s.earned} из ${s.total} получено</span><span>${s.percent}%</span></span><div class="progress-track"><div class="progress-fill" style="width:${s.percent}%"></div></div></button>`;
@@ -410,10 +542,10 @@
         if (earn) {
           const t = state.trophies.find(t => t.id === earn.dataset.earn); if (!t || t.rarity === 'platinum') return;
           const earnedAt = t.earnedAt ? null : new Date().toISOString();
-          commit({ ...state, trophies: state.trophies.map(x => x.id === t.id ? { ...x, earnedAt } : x) }); return;
+          commit({ ...state, trophies: state.trophies.map(x => x.id === t.id ? { ...x, earnedAt } : x) }, null, false, e); return;
         }
         const del = e.target.closest('[data-delete]');
-        if (del && confirm('Удалить этот трофей?')) commit({ ...state, trophies: state.trophies.filter(t => t.id !== del.dataset.delete) }, 'Трофей удалён');
+        if (del && confirm('Удалить этот трофей?')) commit({ ...state, trophies: state.trophies.filter(t => t.id !== del.dataset.delete) }, 'Трофей удалён', false, e);
       });
       $('addTrophyBtn').addEventListener('click', () => openTrophy());
       $('addPlatinumBtn').addEventListener('click', () => openTrophy(null, 'platinum'));
@@ -430,7 +562,7 @@
         const order = previous?.collectionId === collectionId ? previous.order : ordered(state, collectionId).length;
         const fields = { title, description, rarity, collectionId, hidden, order };
         const trophies = previous ? state.trophies.map(t => t.id === previous.id ? { ...t, ...fields } : t) : [...state.trophies, { id: uid(), ...fields, earnedAt: null, createdAt: new Date().toISOString(), earnedHistory: [] }];
-        if (commit({ ...state, trophies }, previous ? 'Трофей обновлён' : 'Трофей добавлен')) $('trophyDialog').close();
+        if (commit({ ...state, trophies }, previous ? 'Трофей обновлён' : 'Трофей добавлен', false, e)) $('trophyDialog').close();
       });
       $('collectionForm').addEventListener('submit', e => {
         e.preventDefault(); const data = new FormData(e.currentTarget);
@@ -457,7 +589,7 @@
         if (source.some(t => t.rarity === 'platinum') && target.some(t => t.rarity === 'platinum')) { showError('В обеих коллекциях есть платина. Сначала измените редкость одной из них или выберите другую коллекцию.'); return; }
         const positions = new Map(source.map((t, index) => [t.id, target.length + index]));
         const trophies = state.trophies.map(t => t.collectionId === deletingCollectionId ? { ...t, collectionId: destination, order: positions.get(t.id) } : t);
-        if (commit({ ...state, collections, trophies, selectedCollection: source.length ? destination : 'all' }, 'Коллекция удалена; трофеи сохранены')) $('deleteCollectionDialog').close();
+        if (commit({ ...state, collections, trophies, selectedCollection: source.length ? destination : 'all' }, 'Коллекция удалена; трофеи сохранены', false, e)) $('deleteCollectionDialog').close();
       });
       $('exportBtn').addEventListener('click', () => {
         if (loadError) { showError('Сохранение недоступно. Экспорт пустых данных отменён.'); return; }
