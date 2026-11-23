@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10110f">
+  <title>NASIK TROPHIES</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #10110f;
+      --panel: #171916;
+      --panel-2: #1d201c;
+      --line: #2b2f29;
+      --text: #f3f2ec;
+      --muted: #92968d;
+      --accent: #d1fb62;
+      --accent-ink: #1c2110;
+      --platinum: #c8d2df;
+      --gold: #f1c66d;
+      --silver: #b8c0c7;
+      --bronze: #c78d67;
+      --radius: 20px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 85% -15%, #343b2455, transparent 42%), var(--bg);
+      color: var(--text);
+      font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    .shell { max-width: 1180px; margin: 0 auto; padding: 34px 28px 64px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 42px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 14px; letter-spacing: .18em; font-weight: 800; }
+    .brand-mark { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 11px; background: var(--accent); color: var(--accent-ink); font-size: 18px; letter-spacing: 0; }
+    .local-badge { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 8px; }
+    .local-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px #d1fb6280; }
+    .hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 30px; }
+    .eyebrow { margin: 0 0 10px; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(34px, 6vw, 60px); line-height: 1; letter-spacing: -.055em; }
+    .hero-copy { max-width: 420px; margin: 14px 0 0; color: var(--muted); }
+    .button { border: 0; border-radius: 12px; padding: 12px 17px; font-weight: 750; transition: transform .15s, filter .15s; }
+    .button:hover { transform: translateY(-1px); filter: brightness(1.08); }
+    .button-primary { background: var(--accent); color: var(--accent-ink); }
+    .button-quiet { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
+    .button-small { padding: 9px 12px; font-size: 13px; }
+    .stats { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 12px; margin-bottom: 34px; }
+    .stat { background: linear-gradient(145deg, #1c2019, #171916); border: 1px solid var(--line); border-radius: var(--radius); padding: 19px 20px; min-height: 115px; }
+    .stat-label { color: var(--muted); font-size: 12px; }
+    .stat-value { margin-top: 7px; font-size: 30px; font-weight: 750; letter-spacing: -.04em; }
+    .progress-track { height: 6px; margin-top: 12px; border-radius: 8px; background: #30342d; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0; border-radius: inherit; background: var(--accent); transition: width .35s ease; }
+    .stat-sub { color: var(--muted); font-size: 11px; margin-top: 6px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 15px; }
+    .section-head h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+    .section-meta { color: var(--muted); font-size: 12px; }
+    .collection-list { display: flex; gap: 9px; overflow-x: auto; padding: 2px 1px 12px; margin-bottom: 27px; scrollbar-width: thin; }
+    .collection-chip { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 11px 14px; color: var(--muted); background: var(--panel); cursor: pointer; max-width: 260px; }
+    .collection-chip.active { color: var(--text); border-color: #65713f; background: #252a1d; }
+    .collection-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .collection-count { color: #8e9387; font-size: 11px; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .filters { display: flex; gap: 7px; flex-wrap: wrap; }
+    .filter { background: transparent; border: 1px solid transparent; color: var(--muted); border-radius: 9px; padding: 7px 11px; font-size: 12px; }
+    .filter.active { background: var(--panel-2); border-color: var(--line); color: var(--text); }
+    .trophy-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .trophy-card { position: relative; min-height: 200px; display: flex; flex-direction: column; padding: 19px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; transition: border-color .2s, transform .2s; }
+    .trophy-card:hover { border-color: #454b3e; transform: translateY(-2px); }
+    .trophy-card::after { content: ""; position: absolute; width: 130px; height: 130px; border-radius: 50%; right: -70px; top: -70px; opacity: .09; background: var(--rarity); filter: blur(1px); }
+    .trophy-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .rarity { color: var(--rarity); display: inline-flex; align-items: center; gap: 7px; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; font-weight: 800; }
+    .rarity-icon { font-size: 15px; line-height: 1; }
+    .icon-button { display: grid; place-items: center; width: 30px; height: 30px; background: transparent; border: 1px solid transparent; color: #757a71; border-radius: 8px; font-size: 17px; }
+    .icon-button:hover { color: var(--text); background: var(--panel-2); border-color: var(--line); }
+    .trophy-card h3 { font-size: 18px; letter-spacing: -.025em; line-height: 1.25; margin: 14px 0 5px; }
+    .trophy-description { color: var(--muted); font-size: 13px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .trophy-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 18px; }
+    .date-earned { color: var(--muted); font-size: 11px; }
+    .earned-button { border: 1px solid #394130; color: var(--accent); background: #24291d; padding: 8px 11px; border-radius: 10px; font-size: 12px; font-weight: 700; }
+    .earned-button.done { border-color: #313630; color: #8c9288; background: #20221f; }
+    .empty { grid-column: 1 / -1; padding: 48px 24px; border: 1px dashed #34382f; border-radius: var(--radius); text-align: center; color: var(--muted); }
+    .empty strong { display: block; color: var(--text); font-size: 16px; margin-bottom: 6px; }
+    dialog { width: min(460px, calc(100% - 28px)); padding: 0; color: var(--text); background: #191c18; border: 1px solid #353a31; border-radius: 20px; box-shadow: 0 30px 100px #000b; }
+    dialog::backdrop { background: #080908c9; backdrop-filter: blur(5px); }
+    .dialog-inner { padding: 23px; }
+    .dialog-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .dialog-head h2 { margin: 0; font-size: 19px; }
+    .close-button { border: 0; background: none; color: var(--muted); font-size: 22px; }
+    .field { display: block; margin: 0 0 15px; }
+    .field span { display: block; color: #aeb2a9; font-size: 12px; margin-bottom: 7px; }
+    .field input, .field textarea, .field select { width: 100%; border: 1px solid #363b33; background: #11130f; color: var(--text); border-radius: 10px; padding: 11px 12px; outline: 0; }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: #82994a; box-shadow: 0 0 0 3px #d1fb6219; }
+    .field textarea { resize: vertical; min-height: 76px; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 21px; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; background: #e9f6c9; color: #202511; font-weight: 700; font-size: 13px; border-radius: 12px; padding: 11px 15px; transition: .2s; box-shadow: 0 8px 25px #0006; }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    footer { text-align: center; margin-top: 50px; color: #656a61; font-size: 11px; }
+    @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } .trophy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .shell { padding: 21px 16px 45px; } header { margin-bottom: 33px; } .hero { align-items: flex-start; flex-direction: column; } .hero .button { width: 100%; } .stats { gap: 8px; } .stat { padding: 15px; min-height: 102px; } .stat-value { font-size: 25px; } .toolbar { align-items: flex-start; flex-direction: column; } .trophy-grid { grid-template-columns: 1fr; } .trophy-card { min-height: 180px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand"><span class="brand-mark">✦</span><span>NASIK TROPHIES</span></div>
+      <div class="local-badge">Хранится только на этом устройстве</div>
+    </header>
+    <section class="hero">
+      <div><p class="eyebrow">Твоя личная игра</p><h1>Каждый шаг<br>засчитан.</h1><p class="hero-copy">Большие мечты складываются из маленьких побед. Собирай их одну за другой.</p></div>
+      <button class="button button-primary" id="addTrophyBtn">＋ Новый трофей</button>
+    </section>
+    <section class="stats" aria-label="Общий прогресс">
+      <div class="stat"><div class="stat-label">Общий прогресс</div><div class="stat-value" id="totalProgress">0%</div><div class="progress-track"><div class="progress-fill" id="totalProgressBar"></div></div><div class="stat-sub" id="totalProgressText">0 из 0 трофеев получено</div></div>
+      <div class="stat"><div class="stat-label">Получено</div><div class="stat-value" id="earnedCount">0</div><div class="stat-sub">трофеев в коллекции</div></div>
+      <div class="stat"><div class="stat-label">В коллекции</div><div class="stat-value" id="allCount">0</div><div class="stat-sub">всего достижений</div></div>
+      <div class="stat"><div class="stat-label">Коллекции</div><div class="stat-value" id="collectionCount">0</div><div class="stat-sub">активных целей</div></div>
+    </section>
+    <section>
+      <div class="section-head"><h2>Коллекции</h2><button class="button button-quiet button-small" id="addCollectionBtn">＋ Коллекция</button></div>
+      <div class="collection-list" id="collectionList"></div>
+    </section>
+    <section>
+      <div class="section-head"><h2 id="trophyHeading">Все трофеи</h2><span class="section-meta" id="visibleCount"></span></div>
+      <div class="toolbar"><div class="filters" id="filters"></div></div>
+      <div class="trophy-grid" id="trophyGrid"></div>
+    </section>
+    <footer>Твои достижения принадлежат тебе · данные сохраняются в этом браузере</footer>
+  </main>
+
+  <dialog id="trophyDialog">
+    <form id="trophyForm" class="dialog-inner">
+      <div class="dialog-head"><h2>Новый трофей</h2><button type="button" class="close-button" data-close="trophyDialog" aria-label="Закрыть">×</button></div>
+      <label class="field"><span>Название</span><input name="title" maxlength="90" placeholder="Например, закончить портфолио" required></label>
+      <label class="field"><span>Описание <small>(необязательно)</small></span><textarea name="description" maxlength="300" placeholder="Как понять, что цель достигнута?"></textarea></label>
+      <label class="field"><span>Редкость</span><select name="rarity"><option value="platinum">Платина</option><option value="gold">Золото</option><option value="silver">Серебро</option><option value="bronze" selected>Бронза</option></select></label>
+      <label class="field"><span>Коллекция</span><select name="collection" id="trophyCollection"></select></label>
+      <div class="dialog-actions"><button type="button" class="button button-quiet" data-close="trophyDialog">Отмена</button><button class="button button-primary" type="submit">Добавить</button></div>
+    </form>
+  </dialog>
+  <dialog id="collectionDialog">
+    <form id="collectionForm" class="dialog-inner">
+      <div class="dialog-head"><h2>Новая коллекция</h2><button type="button" class="close-button" data-close="collectionDialog" aria-label="Закрыть">×</button></div>
+      <label class="field"><span>Название</span><input name="title" maxlength="50" placeholder="Например, Языки" required></label>
+      <div class="dialog-actions"><button type="button" class="button button-quiet" data-close="collectionDialog">Отмена</button><button class="button button-primary" type="submit">Создать</button></div>
+    </form>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const KEY = 'nasik-trophies-v1';
+      const rarityInfo = {
+        platinum: { label: 'Платина', icon: '✦', color: 'var(--platinum)' },
+        gold: { label: 'Золото', icon: '◆', color: 'var(--gold)' },
+        silver: { label: 'Серебро', icon: '◇', color: 'var(--silver)' },
+        bronze: { label: 'Бронза', icon: '●', color: 'var(--bronze)' }
+      };
+      const filters = [{ id: 'all', label: 'Все' }, ...Object.entries(rarityInfo).map(([id, info]) => ({ id, label: info.label }))];
+      const uid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+      const defaultState = () => ({
+        collections: [{ id: 'general', name: 'Моя коллекция', createdAt: new Date().toISOString() }],
+        trophies: [], selectedCollection: 'all', filter: 'all'
+      });
+      let state;
+      try {
+        const saved = JSON.parse(localStorage.getItem(KEY));
+        state = saved && Array.isArray(saved.collections) && Array.isArray(saved.trophies) ? { ...defaultState(), ...saved } : defaultState();
+      } catch { state = defaultState(); }
+      const $ = (id) => document.getElementById(id);
+      const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { showToast('Не удалось сохранить данные в браузере'); } };
+      const safeDate = (date) => { if (!date) return ''; const d = new Date(date); return Number.isNaN(d.getTime()) ? '' : new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }).format(d); };
+      const escapeText = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      let toastTimer;
+      function showToast(message) { const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200); }
+      function render() {
+        const earned = state.trophies.filter(t => t.earnedAt).length;
+        const total = state.trophies.length;
+        const percent = total ? Math.round(earned / total * 100) : 0;
+        $('totalProgress').textContent = `${percent}%`;
+        $('totalProgressBar').style.width = `${percent}%`;
+        $('totalProgressText').textContent = `${earned} из ${total} трофеев получено`;
+        $('earnedCount').textContent = earned;
+        $('allCount').textContent = total;
+        $('collectionCount').textContent = state.collections.length;
+        const current = state.collections.find(c => c.id === state.selectedCollection);
+        $('trophyHeading').textContent = current ? current.name : 'Все трофеи';
+        $('collectionList').innerHTML = `<button class="collection-chip ${state.selectedCollection === 'all' ? 'active' : ''}" data-collection="all"><span class="collection-name">Все коллекции</span><span class="collection-count">${total}</span></button>` + state.collections.map(c => {
+          const count = state.trophies.filter(t => t.collectionId === c.id).length;
+          return `<button class="collection-chip ${state.selectedCollection === c.id ? 'active' : ''}" data-collection="${escapeText(c.id)}"><span class="collection-name">${escapeText(c.name)}</span><span class="collection-count">${count}</span></button>`;
+        }).join('');
+        $('filters').innerHTML = filters.map(f => `<button class="filter ${state.filter === f.id ? 'active' : ''}" data-filter="${f.id}">${f.label}</button>`).join('');
+        const list = state.trophies.filter(t => (state.selectedCollection === 'all' || t.collectionId === state.selectedCollection) && (state.filter === 'all' || t.rarity === state.filter));
+        $('visibleCount').textContent = `${list.length} ${plural(list.length, 'трофей', 'трофея', 'трофеев')}`;
+        $('trophyGrid').innerHTML = list.length ? list.map(trophyCard).join('') : `<div class="empty"><strong>${total ? 'Здесь пока пусто' : 'Начни собирать победы'}</strong>${total ? 'Добавь трофей или выбери другой фильтр.' : 'Создай первый трофей — даже маленький шаг заслуживает отметки.'}</div>`;
+        const collectionSelect = $('trophyCollection');
+        collectionSelect.innerHTML = state.collections.map(c => `<option value="${escapeText(c.id)}">${escapeText(c.name)}</option>`).join('');
+        if (state.collections.some(c => c.id === state.selectedCollection)) collectionSelect.value = state.selectedCollection;
+      }
+      function plural(n, one, few, many) { const n10 = n % 10, n100 = n % 100; return n10 === 1 && n100 !== 11 ? one : n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14) ? few : many; }
+      function trophyCard(t) {
+        const info = rarityInfo[t.rarity] || rarityInfo.bronze;
+        const col = state.collections.find(c => c.id === t.collectionId);
+        return `<article class="trophy-card" style="--rarity:${info.color}"><div class="trophy-top"><span class="rarity"><span class="rarity-icon">${info.icon}</span>${info.label}</span><button class="icon-button delete-trophy" data-id="${escapeText(t.id)}" aria-label="Удалить трофей" title="Удалить">⋯</button></div><h3>${escapeText(t.title)}</h3>${t.description ? `<p class="trophy-description">${escapeText(t.description)}</p>` : ''}<div class="trophy-bottom"><span class="date-earned">${t.earnedAt ? `Получен ${safeDate(t.earnedAt)}` : escapeText(col?.name || '')}</span><button class="earned-button ${t.earnedAt ? 'done' : ''}" data-earn="${escapeText(t.id)}">${t.earnedAt ? '✓ Получен' : 'Отметить'}</button></div></article>`;
+      }
+      $('collectionList').addEventListener('click', e => { const btn = e.target.closest('[data-collection]'); if (!btn) return; state.selectedCollection = btn.dataset.collection; persist(); render(); });
+      $('filters').addEventListener('click', e => { const btn = e.target.closest('[data-filter]'); if (!btn) return; state.filter = btn.dataset.filter; persist(); render(); });
+      $('trophyGrid').addEventListener('click', e => {
+        const earn = e.target.closest('[data-earn]');
+        if (earn) { const t = state.trophies.find(x => x.id === earn.dataset.earn); if (!t) return; t.earnedAt = t.earnedAt ? null : new Date().toISOString(); persist(); render(); showToast(t.earnedAt ? 'Трофей получен! Отличная работа.' : 'Отметка о получении снята'); return; }
+        const del = e.target.closest('.delete-trophy');
+        if (del && confirm('Удалить этот трофей?')) { state.trophies = state.trophies.filter(t => t.id !== del.dataset.id); persist(); render(); showToast('Трофей удалён'); }
+      });
+      $('addTrophyBtn').addEventListener('click', () => { $('trophyForm').reset(); render(); $('trophyDialog').showModal(); $('trophyForm').elements.title.focus(); });
+      $('addCollectionBtn').addEventListener('click', () => { $('collectionForm').reset(); $('collectionDialog').showModal(); $('collectionForm').elements.title.focus(); });
+      $('trophyForm').addEventListener('submit', e => {
+        e.preventDefault(); const data = new FormData(e.currentTarget); const title = String(data.get('title')).trim(); if (!title) return;
+        state.trophies.unshift({ id: uid(), title, description: String(data.get('description') || '').trim(), rarity: data.get('rarity'), collectionId: data.get('collection'), earnedAt: null, createdAt: new Date().toISOString() });
+        persist(); $('trophyDialog').close(); render(); showToast('Трофей добавлен');
+      });
+      $('collectionForm').addEventListener('submit', e => {
+        e.preventDefault(); const name = String(new FormData(e.currentTarget).get('title')).trim(); if (!name) return;
+        const collection = { id: uid(), name, createdAt: new Date().toISOString() }; state.collections.push(collection); state.selectedCollection = collection.id; persist(); $('collectionDialog').close(); render(); showToast('Коллекция создана');
+      });
+      document.addEventListener('click', e => { const close = e.target.closest('[data-close]'); if (close) $(close.dataset.close).close(); });
+      for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+      render();
+    })();
+  </script>
+</body>
+</html>
