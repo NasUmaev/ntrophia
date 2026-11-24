@@ -62,7 +62,7 @@ function launch(initial, storage = { value: initial === undefined ? null : typeo
   vm.runInContext(script, context, { filename: 'index.html:inline' });
   const $ = id => nodes.get(id);
   const data = () => JSON.parse(storage.value);
-  const click = (container, attr, value, options = {}) => $(container).emit('click', { target: { closest: selector => selector === `[data-${attr}]` ? { dataset: { [attr]: value } } : null }, ...options });
+  const click = (container, attr, value, options = {}) => $(container).emit('click', { target: { closest: selector => selector === `[data-${attr}]` ? { dataset: { [attr.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())]: value } } : null }, ...options });
   const fields = (form, values) => { for (const [name, value] of Object.entries(values)) { assert.ok($(form).elements[name], `Missing ${form}.${name}`); const field = $(form).elements[name]; if (field.type === 'checkbox') field.checked = value; else field.value = value; } };
   const importFile = input => $('importFile').emit('change', { target: Object.assign($('importFile'), { value: 'backup.json', files: [{ text: async () => typeof input === 'string' ? input : JSON.stringify(input) }] }) });
   const advance = ms => { const end = timerTime + ms; while (true) { const next = [...timers.entries()].filter(([, t]) => t.at <= end).sort((a,b) => a[1].at - b[1].at)[0]; if (!next) break; timerTime = next[1].at; timers.delete(next[0]); next[1].callback(); } timerTime = end; };
